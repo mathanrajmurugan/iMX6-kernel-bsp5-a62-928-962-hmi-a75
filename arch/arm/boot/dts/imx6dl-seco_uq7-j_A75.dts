@@ -13,11 +13,11 @@
 /dts-v1/;
 
 #include "imx6dl.dtsi"
-#include "imx6qdl-seco_uq7_962.dtsi"
+#include "imx6qdl-seco_uq7-j_A75.dtsi"
 
 / {
-	model = "SECO i.MX6 DualLite/Solo uQ7 (962) Board";
-	compatible = "fsl,imx6dl-uq7_962", "fsl,imx6dl";
+	model = "SECO i.MX6 DualLite/Solo uQ7-J (A75) Board";
+	compatible = "fsl,imx6dl-uq7-j_A75", "fsl,imx6dl";
 };
 
 

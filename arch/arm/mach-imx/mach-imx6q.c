@@ -53,6 +53,28 @@ static int flexcan_stby_gpio;
 static int flexcan0_en;
 static int flexcan1_en;
 
+
+
+static char *audio_options __read_mostly;
+static int __init early_audio_codec (char *options) {
+	audio_options = options;
+	return 0;
+}
+early_param("audio_codec", early_audio_codec);
+
+
+/*  For 928, selection between UART4 and CAN1 interface */
+/*  For A75, selection between UART1 and CAN1 interface */
+static char *serial_options __read_mostly;
+static int __init early_serial_device (char *options) {
+	serial_options = options;
+	return 0;
+}
+early_param("serial_dev", early_serial_device);
+
+
+
+
 static void imx6q_fec_sleep_enable(int enabled)
 {
 	struct regmap *gpr;
@@ -137,6 +159,129 @@ static int __init imx6q_flexcan_fixup_auto(void)
 	return 0;
 }
 
+static inline int __init set_device_mode (const char *node_name, const char *sel_mode) {
+	struct device_node *np, *entry;
+	struct device_node *def_mode;
+	struct device_node *phandle_enable = NULL;
+	struct device_node *phandle_set = NULL;
+	struct device_node *phandle_source = NULL;
+	int num_code, err, use_default, num_element, i;
+	const char *code_name, *def_code_name;
+	const char *en_code = "okay";
+
+	np = of_find_node_by_path(node_name);
+	if ( !np ) {
+		pr_warn ("%s: failed to get %s structure\n", __func__, node_name);
+		return -ENODEV;
+	}
+
+	entry = of_parse_phandle (np, "default_mode", 0);
+	if ( !entry ) {
+		pr_err ("%s: no default mode given!!!\n", of_node_full_name(np));
+		err = -1;
+		goto fail_device_def;
+	}
+	def_mode = entry;
+
+	if ( sel_mode )
+		use_default = 0;
+	else {
+		err = of_property_read_string (def_mode, "code_name", &def_code_name);
+		if ( err ) {
+			pr_err ("%s: error reading code_name string\n", of_node_full_name(def_mode));
+			goto fail_device_def;
+		}
+		pr_info ("%s, use default mode: %s\n", of_node_full_name(np),
+				def_code_name);
+		use_default = 1;
+	}
+
+	num_code = of_get_child_count (np);
+	if ( num_code == 0 ) {
+		pr_err ("%s: no device modes specified!!!\n", of_node_full_name(np));
+		goto fail_device_def;
+	}
+
+	for_each_child_of_node (np, entry) {
+
+		err = of_property_read_string (entry, "code_name", &code_name);
+		if ( err ) {
+			pr_err ("%s error reading codec element!!!\n",
+						of_node_full_name(entry));
+			goto fail_entry_codec;
+		}
+
+		pr_info ("%s, code name: %s\n",  of_node_full_name(np), code_name);
+
+		if ( !strcasecmp (code_name, use_default == 0 ?
+					sel_mode : def_code_name) ) {
+			pr_info ("%s, found selected mode\n", of_node_full_name(np));
+
+			err = of_property_read_u32 (entry, "phandle-num-enable",
+				   	(u32 *)&num_element);
+			if ( err ) {
+				pr_err ("%s error reading phanlde enable num element!!!\n",
+						of_node_full_name(entry));
+				goto fail_entry_codec;
+			}
+
+			for ( i = 0 ; i < num_element ; i++ ) {
+				phandle_enable = of_parse_phandle (entry, "phandle-list-enable", i);
+				if ( !phandle_enable ) {
+					pr_err ("%s, failed to obtain phandle\n", of_node_full_name(entry));
+					return -ENODEV;
+				}
+				err = of_property_write_string (phandle_enable, "status", en_code);
+				if ( err ) {
+					pr_err ("%s, phandle status enable error!!!\n",
+							of_node_full_name(phandle_enable));
+					goto fail_phandle_codec;
+				}
+				of_node_put (phandle_enable);
+			}
+
+
+			err = of_property_read_u32 (entry, "phandle-num-set",
+				  	(u32 *)&num_element);
+			if ( err ) {
+				pr_err ("%s error reading phanlde set num element!!!\n",
+						of_node_full_name(entry));
+					goto fail_phandle_set;
+			}
+
+			for ( i = 0 ; i < num_element ; i++ ) {
+				phandle_set = of_parse_phandle (entry, "phandle-list-set", i);
+				phandle_source = of_parse_phandle (entry, "phandle-list-source", i);
+				if ( !phandle_set || !phandle_source ) {
+					pr_err ("%s, failed to obtain phandle source/set\n", of_node_full_name(entry));
+					return -ENODEV;
+				}
+
+				of_concat_property (phandle_set, phandle_source);
+
+				of_node_put (phandle_source);
+				of_node_put (phandle_set);
+			}
+
+
+			break;
+		}
+	}
+
+	of_node_put (def_mode);
+	return 0;
+fail_phandle_set:
+	err = -1;
+fail_phandle_codec:
+	of_node_put (phandle_enable);
+fail_entry_codec:
+	of_node_put (entry);
+fail_device_def:
+	of_node_put (np);
+	return err;
+}
+
+
 /* For imx6q sabrelite board: set KSZ9021RN RGMII pad skew */
 static int ksz9021rn_phy_fixup(struct phy_device *phydev)
 {
@@ -177,6 +322,13 @@ static int ksz9031rn_phy_fixup(struct phy_device *dev)
 
 	return 0;
 }
+
+
+static int ksz8091rn_phy_fixup(struct phy_device *dev)
+{
+	return 0;
+}
+
 
 /*
  * fixup for PLX PEX8909 bridge to configure GPIO1-7 as output High
@@ -279,6 +431,8 @@ static void __init imx6q_enet_phy_init(void)
 				ksz9021rn_phy_fixup);
 		phy_register_fixup_for_uid(PHY_ID_KSZ9031, MICREL_PHY_ID_MASK,
 				ksz9031rn_phy_fixup);
+		phy_register_fixup_for_uid(PHY_ID_KSZ8091, MICREL_PHY_ID_MASK,
+				ksz8091rn_phy_fixup);
 		phy_register_fixup_for_uid(PHY_ID_AR8031, 0xffffffff,
 				ar8031_phy_fixup);
 		phy_register_fixup_for_uid(PHY_ID_AR8035, 0xffffffef,
@@ -291,6 +445,9 @@ static void __init imx6q_1588_init(void)
 	struct device_node *np;
 	struct clk *ptp_clk;
 	struct regmap *gpr;
+	const char *pm;
+	int err, clk_out = 1;
+
 
 	np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-fec");
 	if (!np) {
@@ -304,17 +461,33 @@ static void __init imx6q_1588_init(void)
 		goto put_node;
 	}
 
+	err = of_property_read_string (np, "phy-mode", &pm);
+	if (err < 0)
+		return err;
+
+	if ( !strcasecmp (pm, "rmii") )
+		clk_out = 0;
+
 	/*
 	 * If enet_ref from ANATOP/CCM is the PTP clock source, we need to
 	 * set bit IOMUXC_GPR1[21].  Or the PTP clock must be from pad
 	 * (external OSC), and we need to clear the bit.
+	 * If we have a RMII phy we want to get enet tx reference clk 
+	 * from pad (external OSC for both external PHY and Internal Controller)
 	 */
 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
-	if (!IS_ERR(gpr))
-		regmap_update_bits(gpr, IOMUXC_GPR1,
-				IMX6Q_GPR1_ENET_CLK_SEL_MASK,
-				IMX6Q_GPR1_ENET_CLK_SEL_ANATOP);
-	else
+	if (!IS_ERR(gpr)) {
+
+		if ( clk_out )
+			regmap_update_bits(gpr, IOMUXC_GPR1,
+					IMX6Q_GPR1_ENET_CLK_SEL_MASK, 
+					IMX6Q_GPR1_ENET_CLK_SEL_ANATOP);
+		else
+			regmap_update_bits(gpr, IOMUXC_GPR1,
+					IMX6Q_GPR1_ENET_CLK_SEL_MASK, 
+					~IMX6Q_GPR1_ENET_CLK_SEL_ANATOP);
+
+	} else
 		pr_err("failed to find fsl,imx6q-iomux-gpr regmap\n");
 
 	clk_put(ptp_clk);
@@ -459,10 +632,13 @@ static const struct apx_wdog_trigger_data apx_wdt __initconst = {
 static void __init imx6q_init_machine(void)
 {
 	struct device *parent;
+	struct device_node *np = NULL;
+	struct clk *p_clk = NULL;
+	int ret;
 
 	if ( of_machine_is_compatible("fsl,imx6q-SBC_A62") ||
 			of_machine_is_compatible("fsl,imx6dl-SBC_A62") ) {
-	
+
 		apx_wdog_trigger_early_init (&apx_wdt, 0);
 
 	}
@@ -486,10 +662,32 @@ static void __init imx6q_init_machine(void)
 
 	if ( of_machine_is_compatible("fsl,imx6q-SBC_A62") ||
 			of_machine_is_compatible("fsl,imx6dl-SBC_A62") ) {
-		
+
 		apx_wdog_trigger_work_init(0);
 
+		/*  set clock CKO2 to use the USBH1 with external clock  */
+		np = of_find_node_by_path("/external_clocks");
+		if ( !np ) {
+			pr_warn ("%s: failed to get %s structure\n", __func__, "/external_clocks");
+			goto put_node;
+		}
+		   p_clk = of_clk_get (np, 0);
+		if ( IS_ERR(p_clk) ) {
+			pr_warn("%s: failed to get clock\n", __func__);
+			goto put_node;
+		}
+		ret = clk_prepare_enable (p_clk);
+		if (ret) {
+			pr_err ("can't enable clock\n");
+		} else {
+			pr_info ("clock enabled\n");
+		}
 	}
+
+	clk_put (p_clk);
+put_node:
+	of_node_put(np);
+
 }
 
 #define OCOTP_CFG3			0x440
@@ -582,6 +780,8 @@ static struct platform_device imx6q_cpufreq_pdev = {
 
 static void __init imx6q_init_late(void)
 {
+	struct device_node *np;
+	int can_en_gpio;
 
 
 	/*
@@ -601,6 +801,29 @@ static void __init imx6q_init_late(void)
 	if (of_machine_is_compatible("fsl,imx6q-sabreauto")
 		|| of_machine_is_compatible("fsl,imx6dl-sabreauto"))
 		imx6q_flexcan_fixup_auto();
+
+
+	if ( of_machine_is_compatible("fsl,imx6q-quadmo747_928")
+		|| of_machine_is_compatible("fsl,imx6dl-quadmo747_928")
+		|| of_machine_is_compatible("fsl,imx6q-uq7_962")
+		|| of_machine_is_compatible("fsl,imx6dl-uq7_962"))
+	{
+		np = of_find_node_by_path ("/serial_switch");
+		if ( np ) {
+
+			can_en_gpio = of_get_named_gpio (np, "selector", 0);
+
+			if ( gpio_is_valid(can_en_gpio) &&
+				!gpio_request_one(can_en_gpio, GPIOF_DIR_OUT, "can-en") ) {
+
+				if ( strcmp (serial_options, "flexcan") == 0 )
+					gpio_set_value_cansleep(can_en_gpio, 0);
+				else
+					gpio_set_value_cansleep(can_en_gpio, 1);
+			}
+
+		}
+	}
 }
 
 static void __init imx6q_map_io(void)
@@ -621,7 +844,33 @@ static void __init imx6q_init_irq(void)
 }
 
 
+
 static void __init imx6q_init_early (void) {
+
+	if (of_machine_is_compatible("fsl,imx6q-quadmo747_928")
+		|| of_machine_is_compatible("fsl,imx6dl-quadmo747_928")
+		|| of_machine_is_compatible("fsl,imx6q-uq7_962")
+		|| of_machine_is_compatible("fsl,imx6dl-uq7_962")
+		|| of_machine_is_compatible("fsl,imx6q-uq7-j_A75")
+		|| of_machine_is_compatible("fsl,imx6dl-uq7-j_A75"))
+
+	{
+		set_device_mode ("/dynamic_choice/chip_audio", audio_options);
+	}
+
+	if ( of_machine_is_compatible("fsl,imx6q-uq7-j_A75")
+		|| of_machine_is_compatible("fsl,imx6dl-uq7-j_A75"))
+	{
+		set_device_mode ("/dynamic_choice/serial_device", serial_options);
+	}
+
+	if ( of_machine_is_compatible("fsl,imx6q-quadmo747_928")
+		|| of_machine_is_compatible("fsl,imx6dl-quadmo747_928")
+		|| of_machine_is_compatible("fsl,imx6q-uq7_962")
+		|| of_machine_is_compatible("fsl,imx6dl-uq7_962"))
+	{
+		set_device_mode ("/dynamic_choice/serial_device", serial_options);
+	}
 }
 
 
