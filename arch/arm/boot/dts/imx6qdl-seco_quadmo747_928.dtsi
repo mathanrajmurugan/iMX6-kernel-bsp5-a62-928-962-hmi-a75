@@ -19,6 +19,10 @@
 		mxcfb1 = &mxcfb2;
 		mxcfb2 = &mxcfb3;
 		mxcfb3 = &mxcfb4;
+		mmc0 = &usdhc3;
+	        mmc1 = &usdhc1;
+	        mmc2 = &usdhc4;
+
 	};
 
 	memory {
