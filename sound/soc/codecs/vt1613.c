@@ -288,7 +288,6 @@ static int vt1613_reset(struct snd_soc_codec *codec, int try_warm)
 	if (snd_soc_read(codec, AC97_RESET) == 0x0140) 
 		return 0;
 
-	printk (KERN_INFO "davide %s\n", __func__);
 	return -EIO;
 }
 
@@ -375,15 +374,12 @@ static int vt1613_codec_probe(struct snd_soc_codec *codec)
 	int ret = 0;
 	struct regmap *regmap;
 
-	printk (KERN_INFO "davide00 --- %s\n", __func__);
-	printk (KERN_INFO "davide --- %s\n", __func__);
 	ret = snd_soc_new_ac97_codec(codec, soc_ac97_ops, 0);
 	if (ret){
 		dev_err(codec->dev, "Failed to register AC97 codec: %d\n", ret);
 		return ret;
 	}	
 
-	printk (KERN_INFO "davide0000 --- %s\n", __func__);
 	soc_ac97_dev_register(codec);
 	if (ret){
 		dev_err(codec->dev, "Failed to register AC97 codec to bus: %d\n", ret);
@@ -391,7 +387,6 @@ static int vt1613_codec_probe(struct snd_soc_codec *codec)
 	}
 	codec->ac97_registered = 1; 
 
-	printk (KERN_INFO "davide000 --- %s\n", __func__);
 	regmap = regmap_init_ac97(codec->ac97, &vt1613_regmap_config);
 	if (IS_ERR(regmap)) {
 		ret = PTR_ERR(regmap);
@@ -399,7 +394,6 @@ static int vt1613_codec_probe(struct snd_soc_codec *codec)
 		goto free_ac97;
 	}
 	
-	printk (KERN_INFO "davide00 --- %s\n", __func__);
 	codec->control_data = regmap;
 	ret = snd_soc_codec_set_cache_io(codec, 16, 16, SND_SOC_REGMAP);
 	if (ret < 0) {
@@ -409,7 +403,6 @@ static int vt1613_codec_probe(struct snd_soc_codec *codec)
 	snd_soc_codec_set_drvdata(codec, codec->ac97);
 
 
-	printk (KERN_INFO "davide0 --- %s\n", __func__);
 
 	/* do a cold reset for the controller and then try
 	 * a warm reset followed by an optional cold reset for codec */
@@ -441,7 +434,6 @@ static int vt1613_codec_probe(struct snd_soc_codec *codec)
 	snd_soc_add_codec_controls(codec, vt1613_snd_ac97_controls,
 			     ARRAY_SIZE(vt1613_snd_ac97_controls));
 
-	printk (KERN_INFO "davide1 --- %s\n", __func__);
 
 	return 0;
 

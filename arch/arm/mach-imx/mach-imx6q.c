@@ -816,9 +816,12 @@ static void __init imx6q_init_late(void)
 			if ( gpio_is_valid(can_en_gpio) &&
 				!gpio_request_one(can_en_gpio, GPIOF_DIR_OUT, "can-en") ) {
 
+				if ( serial_options ) {
 				if ( strcmp (serial_options, "flexcan") == 0 )
 					gpio_set_value_cansleep(can_en_gpio, 0);
 				else
+						gpio_set_value_cansleep(can_en_gpio, 1);
+				} else
 					gpio_set_value_cansleep(can_en_gpio, 1);
 			}
 
