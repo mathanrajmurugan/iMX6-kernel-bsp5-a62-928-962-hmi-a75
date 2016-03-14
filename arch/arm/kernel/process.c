@@ -118,6 +118,11 @@ static void null_restart(enum reboot_mode reboot_mode, const char *cmd)
 {
 }
 
+static void null_poweroff(unsigned long long int cmd)
+{
+}
+
+
 /*
  * Function pointers to optional machine specific functions
  */
@@ -126,6 +131,9 @@ EXPORT_SYMBOL(pm_power_off);
 
 void (*arm_pm_restart)(enum reboot_mode reboot_mode, const char *cmd) = null_restart;
 EXPORT_SYMBOL_GPL(arm_pm_restart);
+
+void (*arm_pm_poweroff)(unsigned long long int cmd) = null_poweroff;
+EXPORT_SYMBOL_GPL(arm_pm_poweroff);
 
 /*
  * This is our default idle handler.
@@ -202,6 +210,7 @@ void machine_halt(void)
 	local_irq_disable();
 	smp_send_stop();
 
+	arm_pm_poweroff (LINUX_REBOOT_CMD_HALT);
 	local_irq_disable();
 	while (1);
 }
@@ -217,6 +226,7 @@ void machine_power_off(void)
 	local_irq_disable();
 	smp_send_stop();
 
+	arm_pm_poweroff (LINUX_REBOOT_CMD_POWER_OFF);
 	if (pm_power_off)
 		pm_power_off();
 }

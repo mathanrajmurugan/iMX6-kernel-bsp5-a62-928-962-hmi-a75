@@ -43,6 +43,10 @@
 		};
 	};
 
+	power_signal: power_signal {
+		power-gpio = <&gpio2 4 0>;
+	};
+
 	regulators {
 		compatible = "simple-bus";
 		#address-cells = <1>;
@@ -275,6 +279,8 @@
 				MX6QDL_PAD_GPIO_17__GPIO7_IO12               0x1f071
 				/*  ECTRL INTERRUPT  */
 				MX6QDL_PAD_NANDF_D7__GPIO2_IO07              0x1f071
+				/*  PWR EMBEDDED CONTROLLER  */
+				MX6QDL_PAD_NANDF_D4__GPIO2_IO04              0x1f071
 			>;
 		};
 

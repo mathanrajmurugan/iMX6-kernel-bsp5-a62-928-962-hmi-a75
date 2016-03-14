@@ -43,6 +43,12 @@
 		};
 	};
 
+
+	power_signal: power_signal {
+		power-gpio = <&gpio2 13 0>;
+	};
+
+
 	regulators {
 		compatible = "simple-bus";
 		#address-cells = <1>;
@@ -278,6 +284,8 @@
 				MX6QDL_PAD_SD4_DAT6__GPIO2_IO14         0x1f071
 				/*  CAN SELECTOR  */
 				MX6QDL_PAD_EIM_D20__GPIO3_IO20          0x1f071
+				/*  PWR EMBEDDED CONTROLLER  */
+				MX6QDL_PAD_SD4_DAT5__GPIO2_IO13         0x1f071
 
 			>;
 		};

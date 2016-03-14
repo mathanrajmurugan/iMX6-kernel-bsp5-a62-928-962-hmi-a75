@@ -61,6 +61,7 @@ struct machine_desc {
 	void			(*handle_irq)(struct pt_regs *);
 #endif
 	void			(*restart)(enum reboot_mode, const char *);
+	void			(*pwroff)(unsigned long long int);
 };
 
 /*

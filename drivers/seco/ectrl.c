@@ -408,8 +408,6 @@ struct snooper_work {
 
 static struct econtroller *ectrl;
 
-static int PowerState;
-static int StateValidate;
 
 
 static struct ectrl_reg_rw reg_halt[] = {
@@ -3565,6 +3563,28 @@ static void ectrl_resolve_state (struct econtroller *ectrl, int enable, int flag
 }
 
 
+static int ectrl_notify_sys (struct notifier_block *this, unsigned long code, void *unused) {
+	int retval;
+	switch ( code ) {
+		case SYS_DOWN:
+			retval = ectrl_SystemReboot (ectrl->client);
+			break;
+		case SYS_HALT:
+		case SYS_POWER_OFF:
+			retval = ectrl_SystemHalt (ectrl->client);
+			break;
+		default:
+			break;
+	}
+	return NOTIFY_DONE;
+}
+
+
+static struct notifier_block ectrl_notifier = {
+	.notifier_call = ectrl_notify_sys,
+};
+
+
 static int ectrl_parse_dt (struct econtroller *ectrl, int board_id) {
 
 	struct device dev = ectrl->client->dev;
@@ -3791,8 +3811,6 @@ static const struct of_device_id seco_ectrl_i2c_match[] = {
 MODULE_DEVICE_TABLE(of, seco_ectrl_of_match);
 
 
-void SetPowerState (int state, int validate);
-
 static int ectrl_probe(struct i2c_client *client, const struct i2c_device_id *id) {
 
 	int err, ret, reg = 0, i;
@@ -3950,7 +3968,7 @@ static int ectrl_probe(struct i2c_client *client, const struct i2c_device_id *id
 	}
 	ret = request_irq (ectrl->irq, irq_interrupt_manager,
 				IRQF_SHARED | IRQF_TRIGGER_FALLING, "ectrl", &ectrl);
-	
+
 	if ( ret ) {
 		ECTRL_ERR ("IRQ not acquired: error %d", ret);
 		err = -EIO;
@@ -3964,7 +3982,11 @@ static int ectrl_probe(struct i2c_client *client, const struct i2c_device_id *id
 		goto err_misc_register;
 	}
 
-	SetPowerState (0x0, 0);
+	ret = register_reboot_notifier (&ectrl_notifier);
+	if ( ret != 0 ) {
+		pr_err("cannot register reboot notifier (err=%d)\n", ret);
+		goto err_notifier_register;
+	}
 
 	ECTRL_INFO (" probe done");
 	printk (KERN_INFO "ec: 0x%02x\n", ectrl_read_data (ectrl->client, BUILDREV_REG) >> 8);
@@ -3974,8 +3996,9 @@ static int ectrl_probe(struct i2c_client *client, const struct i2c_device_id *id
 	return 0;
 
 
+err_notifier_register:
 err_misc_register:
-	ectrl_free_irq (ectrl);	
+	ectrl_free_irq (ectrl);
 err_free_irq:
 err_irq:
 	input_unregister_device (input);
@@ -4007,6 +4030,7 @@ static int ectrl_remove(struct i2c_client *client) {
 	misc_deregister (&ectrl_device);
 	ectrl_free_irq (ectrl);
 	ectrl_remove_proc_fs (ectrl);
+	unregister_reboot_notifier (&ectrl_notifier);
 	kfree (entry_list);
 
 	for ( i = 0 ; i < ectrl->nr_evnt ; i++ )
@@ -4023,44 +4047,8 @@ static int ectrl_remove(struct i2c_client *client) {
 }
 
 
-void SetPowerState (int state, int validate) {
-	PowerState = state;
-	StateValidate = validate;
-}
-
-
-
-
-
 void device_shutdown_ectrl(struct i2c_client *client) {
-	int retval;
-	if (StateValidate) {
-		switch (PowerState) {
-			case LINUX_REBOOT_CMD_RESTART:
-				retval = ectrl_SystemReboot (client);
-				break;
-			case LINUX_REBOOT_CMD_HALT:
-				retval = ectrl_SystemHalt (client);
-				break;
-			case LINUX_REBOOT_CMD_CAD_ON:
-				break;
-			case LINUX_REBOOT_CMD_CAD_OFF:
-				break;
-			case LINUX_REBOOT_CMD_POWER_OFF:
-				break;
-			case LINUX_REBOOT_CMD_RESTART2:
-				break;
-			case LINUX_REBOOT_CMD_SW_SUSPEND:
-				break;
-			case LINUX_REBOOT_CMD_KEXEC:
-				break;
-			default:
-				break;
-		}
-	}
 }
-
-
 
 
 static struct i2c_driver ectrl_driver = {
@@ -4073,7 +4061,6 @@ static struct i2c_driver ectrl_driver = {
 	.probe		= ectrl_probe,
 	.remove		= ectrl_remove,
 	.shutdown   = device_shutdown_ectrl,
-	
 };
 
 

@@ -53,6 +53,9 @@ static int flexcan_stby_gpio;
 static int flexcan0_en;
 static int flexcan1_en;
 
+static int power_gpio = -1;
+static int power_gpio_pol = 0;
+static int only_for_poweroff = 0;
 
 
 static char *audio_options __read_mostly;
@@ -778,11 +781,46 @@ static struct platform_device imx6q_cpufreq_pdev = {
 	.name = "imx6q-cpufreq",
 };
 
+
+static void imx6q_poweroff (const char *cmd) {
+	int ret;
+
+	if ( power_gpio_pol	)
+		ret = gpio_request_one (power_gpio, GPIOF_OUT_INIT_HIGH, "power_gpio");
+	else
+		ret = gpio_request_one (power_gpio, GPIOF_OUT_INIT_LOW, "power_gpio");
+
+	if ( ret < 0)
+		printk (KERN_ERR "Unable to get kill power GPIO\n");
+};
+
+
+void imx6q_restart (enum reboot_mode reboot_mode, const char *cmd) {
+	int ret = 0;
+	int ectrl_signed = 0;
+
+	if ( !only_for_poweroff ) {
+		if ( power_gpio_pol	)
+			ret = gpio_request_one (power_gpio, GPIOF_OUT_INIT_HIGH, "power_gpio");
+		else
+			ret = gpio_request_one (power_gpio, GPIOF_OUT_INIT_LOW, "power_gpio");
+
+		if ( ret < 0)
+			printk (KERN_ERR "Unable to get kill power GPIO\n");
+		else {
+			ectrl_signed = 1;
+		}
+	}
+
+	if ( !ectrl_signed )
+		mxc_restart (reboot_mode, cmd);
+}
+
+
 static void __init imx6q_init_late(void)
 {
 	struct device_node *np;
 	int can_en_gpio;
-
 
 	/*
 	 * WAIT mode is broken on TO 1.0 and 1.1, so there is no point
@@ -796,6 +834,17 @@ static void __init imx6q_init_late(void)
 	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ)) {
 		imx6q_opp_init();
 		platform_device_register(&imx6q_cpufreq_pdev);
+	}
+
+	np = of_find_node_by_path ("/power_signal");
+	if ( np ) {
+		power_gpio = of_get_named_gpio (np, "power-gpio", 0);
+		if ( gpio_is_valid (power_gpio) ) {
+			pm_power_off = imx6q_poweroff;
+		}
+		power_gpio_pol = of_property_read_bool(np, "set_high");
+		only_for_poweroff = of_property_read_bool(np, "only_for_poweroff");
+		np = NULL;
 	}
 
 	if (of_machine_is_compatible("fsl,imx6q-sabreauto")
@@ -817,9 +866,9 @@ static void __init imx6q_init_late(void)
 				!gpio_request_one(can_en_gpio, GPIOF_DIR_OUT, "can-en") ) {
 
 				if ( serial_options ) {
-				if ( strcmp (serial_options, "flexcan") == 0 )
-					gpio_set_value_cansleep(can_en_gpio, 0);
-				else
+					if ( strcmp (serial_options, "flexcan") == 0 )
+						gpio_set_value_cansleep(can_en_gpio, 0);
+					else
 						gpio_set_value_cansleep(can_en_gpio, 1);
 				} else
 					gpio_set_value_cansleep(can_en_gpio, 1);
@@ -897,5 +946,6 @@ DT_MACHINE_START(IMX6Q, "Freescale i.MX6 Quad/DualLite (Device Tree)")
 	.init_machine	= imx6q_init_machine,
 	.init_late      = imx6q_init_late,
 	.dt_compat	= imx6q_dt_compat,
-	.restart	= mxc_restart,
+	.restart	= imx6q_restart,
+	.pwroff	    = imx6q_poweroff,
 MACHINE_END
