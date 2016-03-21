@@ -1507,6 +1507,16 @@ config SERIAL_ST_ASC_CONSOLE
 	depends on SERIAL_ST_ASC=y
 	select SERIAL_CORE_CONSOLE
 
+
+config SERIAL_LPC_SIO
+	tristate "SuperIO Serial port via LPC bus"
+	depends on OF
+	depends on SECO_CPLD_FW
+	depends on SERIAL_8250
+	help
+	  The QuadMo747 supports the LPC Bridge to communicate with
+	  a superIO which has UART controller.
+
 endmenu
 
 endif # TTY

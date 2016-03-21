@@ -6,11 +6,21 @@ menu "SECO mxc support"
 
 config ECTRL
 	bool "Communication system with the Embedded Controller"
-	depends on I2C && ARCH_MXC 
+	depends on I2C && ARCH_MXC
 	help
-		Say Y here if you wanto to use the SecoCommunication System with the Embedded Controller.
-		
+		Say Y here if you want to use the Seco Communication System with the Embedded Controller.
+
 		if usure, say Y.
+
+
+config SECO_CPLD_FW
+	bool "CLPD Firmware management system"
+	depends on ARCH_MXC
+	help
+		Say Y here if you want to use the CLPD Firmware management system.
+
+		if usure, say Y.
+
 
 endmenu
 

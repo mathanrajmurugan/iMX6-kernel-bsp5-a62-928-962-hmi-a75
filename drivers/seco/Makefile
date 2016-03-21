@@ -1,1 +1,2 @@
 obj-$(CONFIG_ECTRL)          += ectrl.o
+obj-$(CONFIG_SECO_CPLD_FW)   += cpld.o cgpio_expander.o lpc_bridge.o sio_w83627.o sio_w83627_gpio.o sio_w83627_serial.o

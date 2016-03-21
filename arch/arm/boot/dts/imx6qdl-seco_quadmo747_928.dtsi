@@ -251,14 +251,25 @@
 };
 
 &clks {
-	assigned-clocks = <&clks IMX6QDL_PLL4_BYPASS_SRC>,
-			  <&clks IMX6QDL_PLL4_BYPASS>,
-			  <&clks IMX6QDL_CLK_PLL4_POST_DIV>;
-	assigned-clock-parents = <&clks IMX6QDL_CLK_LVDS2_IN>,
-				<&clks IMX6QDL_PLL4_BYPASS_SRC>;
-	assigned-clock-rates = <0>, <0>, <24576000>;
-};
+	assigned-clocks =
+			<&clks IMX6QDL_PLL4_BYPASS_SRC>,
+			<&clks IMX6QDL_PLL4_BYPASS>,
 
+			<&clks IMX6QDL_CLK_EMI_SEL>,
+			<&clks IMX6QDL_CLK_EMI_SLOW_SEL>,
+
+			<&clks IMX6QDL_CLK_PLL4_POST_DIV>,
+			<&clks IMX6QDL_CLK_EMI_SLOW_PODF>;
+
+	assigned-clock-parents =
+			<&clks IMX6QDL_CLK_LVDS2_IN>,
+			<&clks IMX6QDL_PLL4_BYPASS_SRC>,
+
+			<&clks IMX6QDL_CLK_PLL2_PFD2_396M>,
+			<&clks IMX6QDL_CLK_AXI>;
+
+	assigned-clock-rates = <0>, <0>, <0>, <0>, <24576000>, <8>;
+};
 
 
 /*  __________________________________________________________________________
@@ -287,7 +298,7 @@
 				/*  PWR EMBEDDED CONTROLLER  */
 				MX6QDL_PAD_SD4_DAT5__GPIO2_IO13         0x1f071
 
-			>;
+					>;
 		};
 
 
@@ -504,6 +515,55 @@
 				MX6QDL_PAD_DISP0_DAT2__GPIO4_IO23            0x1f071
 			>;
 		};
+
+
+/*  __________________________________________________________________________
+ * |______________________________ BUS WEIM __________________________________|
+ */
+		pinctrl_cgpio_exp: cgpio_exp {
+			fsl,pins = <
+				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14             0x1f071
+				MX6QDL_PAD_NANDF_ALE__GPIO6_IO08    0x1f071
+				MX6QDL_PAD_NANDF_CS3__GPIO6_IO16            0x1f071
+			>;
+		};
+
+		pinctrl_weim_cs: weimcs0grp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_CS0__EIM_CS0_B                0xb0b1
+				MX6QDL_PAD_EIM_CS1__EIM_CS1_B                0xb0b1
+			>;
+		};
+
+		pinctrl_weim_nor: weimnorgrp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_DA15__EIM_AD15                0xb0b1
+				MX6QDL_PAD_EIM_DA14__EIM_AD14                0xb0b1
+				MX6QDL_PAD_EIM_DA13__EIM_AD13                0xb0b1
+				MX6QDL_PAD_EIM_DA12__EIM_AD12                0xb0b1
+				MX6QDL_PAD_EIM_DA11__EIM_AD11                0xb0b1
+				MX6QDL_PAD_EIM_DA10__EIM_AD10                0xb0b1
+				MX6QDL_PAD_EIM_DA9__EIM_AD09                 0xb0b1
+				MX6QDL_PAD_EIM_DA8__EIM_AD08                 0xb0b1
+				MX6QDL_PAD_EIM_DA7__EIM_AD07                 0xb0b1
+				MX6QDL_PAD_EIM_DA6__EIM_AD06                 0xb0b1
+				MX6QDL_PAD_EIM_DA5__EIM_AD05                 0xb0b1
+				MX6QDL_PAD_EIM_DA4__EIM_AD04                 0xb0b1
+				MX6QDL_PAD_EIM_DA3__EIM_AD03                 0xb0b1
+				MX6QDL_PAD_EIM_DA2__EIM_AD02                 0xb0b1
+				MX6QDL_PAD_EIM_DA1__EIM_AD01                 0xb0b1
+				MX6QDL_PAD_EIM_DA0__EIM_AD00                 0xb0b1
+
+				MX6QDL_PAD_EIM_OE__EIM_OE_B                  0xb0b1
+				MX6QDL_PAD_EIM_RW__EIM_RW                    0xb0b1
+				MX6QDL_PAD_EIM_LBA__EIM_LBA_B                0xb0b1
+
+				MX6QDL_PAD_EIM_EB0__EIM_EB0_B                0xb0b1
+				MX6QDL_PAD_EIM_EB1__EIM_EB1_B                0xb0b1
+				MX6QDL_PAD_EIM_EB3__EIM_EB3_B                0xb0b1
+			>;
+		};
+
 
 	};
 };
@@ -778,6 +838,103 @@
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
  */
+
+
+/*  __________________________________________________________________________
+ * |                                                                          |
+ * |                                   BUS WEIM                               |
+ * |__________________________________________________________________________|
+ */
+
+&weim {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_weim_nor &pinctrl_weim_cs &pinctrl_cgpio_exp>;
+	#address-cells = <2>;
+	#size-cells = <1>;
+	ranges = <0 0 0x08000000 0x08000000>;
+
+
+	cpld: cpld_seco@0,0 {
+		compatible = "seco,cpld";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0 0 0x20000>;
+		fsl,weim-cs-timing = <0x0191088F 0x00001000 0x14000000 0x00000008 0x03000000 0x00000000>;
+		fsl,weim-wcr = <0x00000121>;
+		fsl,weim-cscmr1 = <0x03900000>;
+		fsl,weim-cgr6 = <0x00000C00>;
+
+
+		cgpio_exp: cgpio_exp@0 {
+			compatible = "seco,cgpio_expander";
+			reg = <0>;
+			type = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells=<2>;
+			interrupt-parent = <&gpio6>;
+			interrupts = <14 1>;
+			status = "disabled";
+		};
+
+
+		lpc_bridge: lpc_bridge@0 {
+			compatible = "seco,lpc_bridge";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			type = <1>;
+			interrupt-controller;
+			#interrupt-cells=<2>;
+			interrupt-parent = <&gpio6>;
+			interrupts = <14 1>;
+			status = "disabled";
+
+			superio: superio@0 {
+				compatible = "nuvoton,w83627dhg";
+				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gpio_exp: gpio_exp {
+					compatible = "nuvoton,w83627dhg_gpio";
+					gpio_id = <2>;
+				};
+
+				uartA: uartA {
+					compatible = "nuvoton,w83627dhg_A_16550a";
+					device_id = <2>;
+					uart-clk = <24000000>;
+					membase = <0x03F8>;
+					reg-shift = <0>;
+					fifo-size = <16>;
+					interrupt-parent = <&lpc_bridge>;
+					interrupts = <4 4>;
+					pl-size = <30>;
+					rs485;
+					half-duplex;
+				};
+
+				uartB: uartB {
+					compatible = "nuvoton,w83627dhg_B_16550a";
+					device_id = <3>;
+					uart-clk = <24000000>;
+					membase = <0x02F8>;
+					reg-shift = <0>;
+					fifo-size = <16>;
+					interrupt-parent = <&lpc_bridge>;
+					interrupts = <3 4>;
+					pl_size = <0>;
+				};
+
+			};
+		};
+
+	};
+
+};
+
 
 
 /*  __________________________________________________________________________
