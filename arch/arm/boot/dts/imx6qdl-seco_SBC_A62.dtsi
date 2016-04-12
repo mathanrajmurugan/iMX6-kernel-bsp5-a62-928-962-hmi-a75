@@ -825,7 +825,7 @@
 		reg = <1>;
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
-		status = "okay";
+		status = "disable";
 
 		crtc = "ipu2-di1";
 		display-timings {
