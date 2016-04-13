@@ -29,6 +29,8 @@
 #include <linux/pm_qos.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#include <linux/jiffies.h>
+#include <linux/workqueue.h>
 #include <linux/platform_data/st1232_pdata.h>
 
 #define ST1232_TS_NAME	"st1232-ts"
@@ -39,6 +41,7 @@
 #define MAX_Y		0x1df	/* (480 - 1) */
 #define MAX_AREA	0xff
 #define MAX_FINGERS	2
+#define MAX_DELAY	100 /* msecs */
 
 struct st1232_ts_finger {
 	u16 x;
@@ -51,6 +54,8 @@ struct st1232_ts_data {
 	struct i2c_client *client;
 	struct input_dev *input_dev;
 	struct st1232_ts_finger finger[MAX_FINGERS];
+	struct delayed_work pen_event_work;
+	struct workqueue_struct *ts_workq;
 	struct dev_pm_qos_request low_latency_req;
 	int reset_gpio;
 };
@@ -99,6 +104,55 @@ static int st1232_ts_read_data(struct st1232_ts_data *ts)
 
 	return 0;
 }
+/*
+static int st1232_ts_read_fw(struct st1232_ts_data *ts)
+{
+
+	char buf[4];
+        int ret;
+	u32 rev;
+	struct i2c_client *client = ts->client;
+        buf[0] = 0xd;   //Set Reg. address to 0xe for reading FW version.
+        if ((ret = i2c_master_send(client, buf, 1)) != 1)
+                return -EIO;
+
+        //Read 1 byte FW version from Reg. 0xe set previously.
+        if ((ret = i2c_master_recv(client, buf, 4)) != 4)
+                return -EIO;
+
+        rev = ((u32)buf[3]);
+        rev |= (((u32)buf[2]) << 8);
+        rev |= (((u32)buf[1]) << 16);
+        rev |= (((u32)buf[0]) << 24);
+	
+	dev_info(&ts->client->dev,"touch firmware version = %x",rev );	
+
+        buf[0] = 0x10;  //Set Reg. address back to 0x10 for coordinates.
+        if ((ret = i2c_master_send(client, buf, 1)) != 1)
+                return -EIO;
+	return 0;
+}
+*/
+static void st1232_pressure_event_worker(struct work_struct *work)
+{
+	int i = 0, ret;
+	struct st1232_ts_data *wm = container_of(work, struct st1232_ts_data, pen_event_work.work);
+	struct st1232_ts_finger *finger = wm->finger;
+	struct input_dev *input_dev = wm->input_dev;
+
+	ret = st1232_ts_read_data(wm);
+        if (ret < 0)
+                return;
+	if(finger[i].is_valid){
+		queue_delayed_work(wm->ts_workq, &wm->pen_event_work,msecs_to_jiffies(MAX_DELAY));	
+		return;	
+	}
+	input_report_abs(input_dev, ABS_MT_TOUCH_MAJOR, 0);
+	input_mt_sync(input_dev);
+	input_sync(input_dev);	
+
+	return;
+}
 
 static irqreturn_t st1232_ts_irq_handler(int irq, void *dev_id)
 {
@@ -107,7 +161,8 @@ static irqreturn_t st1232_ts_irq_handler(int irq, void *dev_id)
 	struct input_dev *input_dev = ts->input_dev;
 	int count = 0;
 	int i, ret;
-
+	flush_workqueue(ts->ts_workq);
+	cancel_delayed_work(&ts->pen_event_work);
 	ret = st1232_ts_read_data(ts);
 	if (ret < 0)
 		goto end;
@@ -117,30 +172,27 @@ static irqreturn_t st1232_ts_irq_handler(int irq, void *dev_id)
 		if (!finger[i].is_valid)
 			continue;
 
-		input_report_abs(input_dev, ABS_MT_TOUCH_MAJOR, finger[i].t);
+		input_report_abs(input_dev, ABS_MT_TOUCH_MAJOR, 1);
 		input_report_abs(input_dev, ABS_MT_POSITION_X, finger[i].x);
-		input_report_abs(input_dev, ABS_MT_POSITION_Y, finger[i].y);
+		input_report_abs(input_dev, ABS_MT_POSITION_Y, (finger[i].y-MAX_Y)*(-1));
+		input_report_abs(input_dev, ABS_X, finger[i].x);
+		input_report_abs(input_dev, ABS_Y, (finger[i].y-MAX_Y)*(-1));
 		input_mt_sync(input_dev);
+		input_sync(input_dev);
 		count++;
 	}
 
 	/* SYN_MT_REPORT only if no contact */
-	if (!count) {
+	if (!count)
 		input_mt_sync(input_dev);
-		if (ts->low_latency_req.dev) {
-			dev_pm_qos_remove_request(&ts->low_latency_req);
-			ts->low_latency_req.dev = NULL;
-		}
-	} else if (!ts->low_latency_req.dev) {
-		/* First contact, request 100 us latency. */
-		dev_pm_qos_add_ancestor_request(&ts->client->dev,
-						&ts->low_latency_req, 100);
-	}
 
 	/* SYN_REPORT */
 	input_sync(input_dev);
 
 end:
+	if (!delayed_work_pending(&ts->pen_event_work)) 
+		queue_delayed_work(ts->ts_workq, &ts->pen_event_work,msecs_to_jiffies(MAX_DELAY));
+	
 	return IRQ_HANDLED;
 }
 
@@ -176,6 +228,11 @@ static int st1232_ts_probe(struct i2c_client *client,
 	if (!input_dev)
 		return -ENOMEM;
 
+	ts->ts_workq = create_singlethread_workqueue("st1232-touchscreen");
+        if (ts->ts_workq == NULL) {
+                return -EINVAL;
+        }
+
 	ts->client = client;
 	ts->input_dev = input_dev;
 
@@ -198,6 +255,8 @@ static int st1232_ts_probe(struct i2c_client *client,
 
 	st1232_ts_power(ts, true);
 
+	INIT_DELAYED_WORK(&ts->pen_event_work, st1232_pressure_event_worker);
+
 	input_dev->name = "st1232-touchscreen";
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->dev.parent = &client->dev;
@@ -205,10 +264,15 @@ static int st1232_ts_probe(struct i2c_client *client,
 	__set_bit(EV_SYN, input_dev->evbit);
 	__set_bit(EV_KEY, input_dev->evbit);
 	__set_bit(EV_ABS, input_dev->evbit);
-
+	/* Mousedev parameters for mouse0 device */
+	input_dev->evbit[0] = BIT(EV_ABS) | BIT(EV_KEY);
+	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
+	/* Single touch and Multitouch properties */
 	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR, 0, MAX_AREA, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_POSITION_X, MIN_X, MAX_X, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_POSITION_Y, MIN_Y, MAX_Y, 0, 0);
+	input_set_abs_params(input_dev, ABS_X, MIN_X, MAX_X, 0, 0);
+	input_set_abs_params(input_dev, ABS_Y, MIN_Y, MAX_Y, 0, 0);
 
 	error = devm_request_threaded_irq(&client->dev, client->irq,
 					  NULL, st1232_ts_irq_handler,
@@ -228,6 +292,8 @@ static int st1232_ts_probe(struct i2c_client *client,
 
 	i2c_set_clientdata(client, ts);
 	device_init_wakeup(&client->dev, 1);
+	//st1232_ts_read_fw(ts);	
+	return 0;
 
 	return 0;
 }
