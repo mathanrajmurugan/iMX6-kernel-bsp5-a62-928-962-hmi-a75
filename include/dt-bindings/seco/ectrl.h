@@ -24,10 +24,10 @@
 
 
 
-#define ECTRL_BOOTDEV_USDHC4    0x01
-#define ECTRL_BOOTDEV_USDHC1    0x02
-#define ECTRL_BOOTDEV_EMMC      0x04
-#define ECTRL_BOOTDEV_SPI       0x08
+#define ECTRL_BOOTDEV_USDHC4    0x00
+#define ECTRL_BOOTDEV_USDHC1    0x01
+#define ECTRL_BOOTDEV_EMMC      0x02
+#define ECTRL_BOOTDEV_SPI       0x03
 
 
 #endif   /*  __DT_BINDINGS_SECO_ECTRL_H  */

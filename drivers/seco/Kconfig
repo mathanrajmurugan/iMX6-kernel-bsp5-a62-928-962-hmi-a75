@@ -22,5 +22,13 @@ config SECO_CPLD_FW
 		if usure, say Y.
 
 
+config SECO_PWR_BTN
+	bool "SECO power button management system"
+	depends on ARCH_MXC
+	help
+		Say Y here if you want to use the SECO power button management system.
+
+		if usure, say Y.
+
 endmenu
 

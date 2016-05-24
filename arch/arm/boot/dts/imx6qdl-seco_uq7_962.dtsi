@@ -14,15 +14,15 @@
 #include <dt-bindings/seco/ectrl.h>
 
 
+
 / {
 	aliases {
 		mxcfb0 = &mxcfb1;
 		mxcfb1 = &mxcfb2;
 		mxcfb2 = &mxcfb3;
 		mxcfb3 = &mxcfb4;
-		mmc0 = &usdhc3;
-	        mmc1 = &usdhc4;
-
+		mmc0   = &usdhc3;
+		mmc1   = &usdhc4;
 	};
 
 	memory {
@@ -35,61 +35,70 @@
 		selector = <&gpio3 20 0>;
 	};
 
+/*  __________________________________________________________________________
+ * |_______________________________ CLOCKING _________________________________|
+ */
 	clocks {
 		codec_osc: anaclk2 {
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
+			compatible      = "fixed-clock";
+			#clock-cells    = <0>;
 			clock-frequency = <24576000>;
 		};
 	};
 
+
+
+/*  __________________________________________________________________________
+ * |___________________________ POWER MANAGEMENT _____________________________|
+ */
 	power_signal: power_signal {
 		power-gpio = <&gpio2 4 0>;
 	};
 
+
 	regulators {
-		compatible = "simple-bus";
+		compatible     = "simple-bus";
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells    = <0>;
 
 		reg_usb_otg_vbus: regulator@0 {
-			compatible = "regulator-fixed";
-			reg = <0>;
-			regulator-name = "usb_otg_vbus";
+			compatible              = "regulator-fixed";
+			reg                     = <0>;
+			regulator-name          = "usb_otg_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			gpio = <&gpio3 22 0>;
+			gpio                    = <&gpio3 22 0>;
 			enable-active-high;
 		};
 
 		reg_usb_h1_vbus: regulator@1 {
-			compatible = "regulator-fixed";
-			reg = <1>;
-			regulator-name = "usb_h1_vbus";
+			compatible              = "regulator-fixed";
+			reg                     = <1>;
+			regulator-name          = "usb_h1_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			gpio = <&gpio7 12 0>;
+			gpio                    = <&gpio7 12 0>;
 			enable-active-high;
 		};
 
 		reg_2p5v_sgtl5000: regulator@2 {
-			compatible = "regulator-fixed";
-			reg = <2>;
-			regulator-name = "2P5V_sgtl5000";
+			compatible              = "regulator-fixed";
+			reg                     = <2>;
+			regulator-name          = "2P5V_sgtl5000";
 			regulator-min-microvolt = <2500000>;
 			regulator-max-microvolt = <2500000>;
 			regulator-always-on;
-			status = "disabled";
+			status                  = "disabled";
 		};
 
 		reg_3p3v_sgtl5000: regulator@3 {
-			compatible = "regulator-fixed";
-			reg = <3>;
-			regulator-name = "3P3V_sgtl5000";
+			compatible              = "regulator-fixed";
+			reg                     = <3>;
+			regulator-name          = "3P3V_sgtl5000";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 			regulator-always-on;
-			status = "disabled";
+			status                  = "disabled";
 		};
 
 	};
@@ -100,28 +109,28 @@
  */
     codec_vt1613: codec_vt1613 {
 		compatible = "via,vt1613";
-		status = "disabled";
+		status     = "disabled";
 	};
 
 	sound_vt1613: sound_vt1613 {
-		compatible = "fsl,imx-vt1613-audio";
-		model = "fsl,imx-vt1613-audio";
+		compatible     = "fsl,imx-vt1613-audio";
+		model          = "fsl,imx-vt1613-audio";
 		ssi-controller = <&ssi1>;
-		audio-codec = <&codec_vt1613>;
-		mux-int-port = <1>;
-		mux-ext-port = <6>;
-		status = "disabled";
+		audio-codec    = <&codec_vt1613>;
+		mux-int-port   = <1>;
+		mux-ext-port   = <6>;
+		status         = "disabled";
 	};
 
 	ssi_vt1613: ssi_vt1613 {
-		fsl,mode = "ac97-slave";
+		fsl,mode      = "ac97-slave";
 		pinctrl-names = "default", "ac97-running", "ac97-reset", "ac97-warm-reset";
-		pinctrl-0 = <&ac97link_running>;
-		pinctrl-1 = <&ac97link_running>;
-		pinctrl-2 = <&ac97link_reset>;
-		pinctrl-3 = <&ac97link_warm_reset>;
+		pinctrl-0     = <&ac97link_running>;
+		pinctrl-1     = <&ac97link_running>;
+		pinctrl-2     = <&ac97link_reset>;
+		pinctrl-3     = <&ac97link_warm_reset>;
 		/* sync, sdata (output), reset */
-		ac97-gpios = <&gpio4 19 0 &gpio4 18 0 &gpio4 23 0>;
+		ac97-gpios    = <&gpio4 19 0 &gpio4 18 0 &gpio4 23 0>;
 	};
 
 
@@ -129,18 +138,18 @@
  * |___________________________ AUDIO SGTL5000 _______________________________|
  */
 	sound_sgtl5000: sound_sgtl5000 {
-		compatible = "fsl,imx6q-seco-sgtl5000",
-					"fsl,imx-audio-sgtl5000";
-		model = "fsl,imx6q-seco-sgtl5000";
-		cpu-dai = <&ssi1>;
-		audio-codec = <&codec_sgtl5000>;
+		compatible    = "fsl,imx6q-seco-sgtl5000",
+						"fsl,imx-audio-sgtl5000";
+		model         = "fsl,imx6q-seco-sgtl5000";
+		cpu-dai       = <&ssi1>;
+		audio-codec   = <&codec_sgtl5000>;
 		audio-routing =
-			"MIC_IN", "Mic Jack",
-			"Mic Jack", "Mic Bias",
-			"Headphone Jack", "HP_OUT";
-		mux-int-port = <1>;
-		mux-ext-port = <6>;
-		status = "disabled";
+						"MIC_IN", "Mic Jack",
+						"Mic Jack", "Mic Bias",
+						"Headphone Jack", "HP_OUT";
+		mux-int-port  = <1>;
+		mux-ext-port  = <6>;
+		status        = "disabled";
 	};
 
 	ssi_sgtl5000: ssi_sgtl5000 {
@@ -149,16 +158,15 @@
 
 	audmux_sgtl5000: audmux_sgtl5000 {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_audmux>;
+		pinctrl-0     = <&pinctrl_audmux>;
 	};
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
  */
-
 	sound-hdmi {
-		compatible = "fsl,imx6q-audio-hdmi",
-			     "fsl,imx-audio-hdmi";
-		model = "imx-audio-hdmi";
+		compatible      = "fsl,imx6q-audio-hdmi",
+							"fsl,imx-audio-hdmi";
+		model           = "imx-audio-hdmi";
 		hdmi-controller = <&hdmi_audio>;
 	};
 
@@ -166,105 +174,114 @@
  * |____________________________ FRAME BUFFER ________________________________|
  */
 	mxcfb1: fb@0 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "ldb";
+		compatible        = "fsl,mxc_sdc_fb";
+		disp_dev          = "ldb";
 		interface_pix_fmt = "RGB666";
-		mode_str = "LDB-WVGA";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
+		mode_str          = "LDB-WVGA";
+		default_bpp       = <16>;
+		int_clk           = <0>;
+		late_init         = <0>;
+		status            = "disabled";
 	};
 
 	mxcfb2: fb@1 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "hdmi";
+		compatible        = "fsl,mxc_sdc_fb";
+		disp_dev          = "hdmi";
 		interface_pix_fmt = "RGB24";
-		mode_str ="1920x1080M@60";
-		default_bpp = <24>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
+		mode_str          = "1920x1080M@60";
+		default_bpp       = <24>;
+		int_clk           = <0>;
+		late_init         = <0>;
+		status            = "disabled";
 	};
 
 	mxcfb3: fb@2 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "lcd";
+		compatible        = "fsl,mxc_sdc_fb";
+		disp_dev          = "lcd";
 		interface_pix_fmt = "RGB565";
-		mode_str ="CLAA-WVGA";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
+		mode_str          = "CLAA-WVGA";
+		default_bpp       = <16>;
+		int_clk           = <0>;
+		late_init         = <0>;
+		status            = "disabled";
 	};
 
 	mxcfb4: fb@3 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "ldb";
+		compatible        = "fsl,mxc_sdc_fb";
+		disp_dev          = "ldb";
 		interface_pix_fmt = "RGB666";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
+		default_bpp       = <16>;
+		int_clk           = <0>;
+		late_init         = <0>;
+		status            = "disabled";
 	};
 
 #include <dt-bindings/pwm/pwm.h>
 	backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm1 0 5000000>;
-		brightness-levels = <0 4 8 16 32 64 128 255>;
-		default-brightness-level = <7>;
-		enable-gpios = <&gpio1 4 0>; 
-		status = "okay";
+		compatible               = "pwm-backlight";
+		pwms                     = <&pwm1 0 500000>;
+		brightness-levels        = <0  4   8   12  16  20  24  28  32  36
+		                            40  44  48  52  56  60  64  68  72  76
+		                            80  84  88  92  96  100 104 108 112 116
+		                            120 124 128 132 136 140 144 148 152 156
+		                            160 164 168 172 176 180 184 188 192 196
+		                            200 204 208 212 216 220 224 228 232 236
+		                            240 244 248 252 255
+		                           >;
+		default-brightness-level = <65>;
+
+		enable-gpios             = <&gpio1 4 0>;
+		status                   = "okay";
 	};
 
 	v4l2_cap_0 {
-		compatible = "fsl,imx6q-v4l2-capture";
-		ipu_id = <0>;
-		csi_id = <0>;
+		compatible  = "fsl,imx6q-v4l2-capture";
+		ipu_id      = <0>;
+		csi_id      = <0>;
 		mclk_source = <0>;
-		status = "okay";
+		status      = "okay";
 	};
 
 	v4l2_cap_1 {
-		compatible = "fsl,imx6q-v4l2-capture";
-		ipu_id = <0>;
-		csi_id = <1>;
+		compatible  = "fsl,imx6q-v4l2-capture";
+		ipu_id      = <0>;
+		csi_id      = <1>;
 		mclk_source = <0>;
-		status = "okay";
+		status      = "okay";
 	};
 
 	v4l2_out {
 		compatible = "fsl,mxc_v4l2_output";
-		status = "okay";
+		status     = "okay";
 	};
 
 	mipi_dsi_reset: mipi-dsi-reset {
-		compatible = "gpio-reset";
-		reset-gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+		compatible     = "gpio-reset";
+		reset-gpios    = <&gpio6 11 GPIO_ACTIVE_LOW>;
 		reset-delay-us = <50>;
-		#reset-cells = <0>;
+		#reset-cells   = <0>;
 	};
 };
 
 &clks {
 	assigned-clocks =
-			<&clks IMX6QDL_CLK_LDB_DI0_SEL>,
-			<&clks IMX6QDL_CLK_LDB_DI1_SEL>,
-
 			<&clks IMX6QDL_PLL4_BYPASS_SRC>,
 			<&clks IMX6QDL_PLL4_BYPASS>,
 
-			<&clks IMX6QDL_CLK_PLL4_POST_DIV>;
+			<&clks IMX6QDL_CLK_EMI_SEL>,
+			<&clks IMX6QDL_CLK_EMI_SLOW_SEL>,
+
+			<&clks IMX6QDL_CLK_PLL4_POST_DIV>,
+			<&clks IMX6QDL_CLK_EMI_SLOW_PODF>;
 
 	assigned-clock-parents =
-			<&clks IMX6QDL_CLK_PLL5_VIDEO_DIV>,
-			<&clks IMX6QDL_CLK_PLL5_VIDEO_DIV>,
-
 			<&clks IMX6QDL_CLK_LVDS2_IN>,
-			<&clks IMX6QDL_PLL4_BYPASS_SRC>;
+			<&clks IMX6QDL_PLL4_BYPASS_SRC>,
 
-	assigned-clock-rates = <0>, <0>, <0>, <0>, <24576000>;
+			<&clks IMX6QDL_CLK_PLL2_PFD2_396M>,
+			<&clks IMX6QDL_CLK_AXI>;
+
+	assigned-clock-rates = <0>, <0>, <0>, <0>, <24576000>, <8>;
 };
 
 
@@ -276,7 +293,7 @@
  */
 &iomuxc {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_hog>;
+	pinctrl-0     = <&pinctrl_hog>;
 
 	imx6qdl-uq7_962 {
 
@@ -455,10 +472,19 @@
 /*  __________________________________________________________________________
  * |__________________________________ USB ___________________________________|
  */
-
 		pinctrl_usbotg: usbotggrp {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_1__USB_OTG_ID                0x17059 
+			>;
+		};
+
+/*  __________________________________________________________________________
+ * |__________________________________ PWM ___________________________________|
+ */
+		/*  Backlight  */
+		pinctrl_pwm1: pwm1grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_9__PWM1_OUT                  0x1b0b1
 			>;
 		};
 
@@ -518,23 +544,23 @@
  */
 &uart2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2>;
-	status = "okay";
+	pinctrl-0     = <&pinctrl_uart2>;
+	status        = "okay";
 };
+
 
 &uart4 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart4>;
-	status = "disable";
+	pinctrl-0     = <&pinctrl_uart4>;
+	status        = "disable";
 };
 
 
 &uart5 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5>;
-	status = "okay";
+	pinctrl-0     = <&pinctrl_uart5>;
+	status        = "okay";
 };
-
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
  */
@@ -548,8 +574,8 @@
  */
 &flexcan1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_flexcan1>;
-	status = "disable";
+	pinctrl-0     = <&pinctrl_flexcan1>;
+	status        = "disable";
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
@@ -564,23 +590,38 @@
  */
 &usdhc3 {
         pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_usdhc3>;
-        bus-width = <8>;
+        pinctrl-0     = <&pinctrl_usdhc3>;
+        bus-width     = <8>;
         no-1-8-v;
         non-removable;
         keep-power-in-suspend;
-        status = "okay";
+        status        = "okay";
 };
 
 &usdhc4 {
         pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_usdhc4>;
-        cd-gpios = <&gpio2 6 0>;
-        wp-gpios = <&gpio5 20 0>;
+        pinctrl-0     = <&pinctrl_usdhc4>;
+        cd-gpios      = <&gpio2 6 0>;
+        wp-gpios      = <&gpio5 20 0>;
         keep-power-in-suspend;
         enable-sdio-wakeup;
         no-1-8-v;
-        status = "okay";
+        status        = "okay";
+};
+/*  __________________________________________________________________________
+ * |__________________________________________________________________________|
+ */
+
+
+/*  __________________________________________________________________________
+ * |                                                                          |
+ * |                                    PWM                                   |
+ * |__________________________________________________________________________|
+ */
+&pwm1 {
+	pinctrl-names = "default";
+	pinctrl-0     = <&pinctrl_pwm1>;
+	status        = "okay";
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
@@ -594,55 +635,53 @@
  */
 &ecspi1 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio3 19 0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi1>;
-	status = "okay";
+	cs-gpios                = <&gpio3 19 0>;
+	pinctrl-names           = "default";
+	pinctrl-0               = <&pinctrl_ecspi1>;
+	status                  = "okay";
 
 
 	flash: m25p80@0 {
-	
-		#address-cells = <1>;
-		#size-cells = <0>;
- 
-		compatible = "sst,sst25vf080b";
+		#address-cells    = <1>;
+		#size-cells       = <0>;
+
+		compatible        = "sst,sst25vf080b";
+		reg               = <0>;
 		spi-max-frequency = <20000000>;
-		reg = <0>;
 
 		partition@0 {
 			label = "bootloader";
-			reg = <0x00000000 0x00004000>;
+			reg   = <0x00000000 0x00004000>;
 		};
-       };
-
+	};
 
 };
 
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <2>;
-	cs-gpios = <&gpio5 12  0>, <&gpio5 9 0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi2>;
-	status = "okay";
+	cs-gpios                = <&gpio5 12  0>, <&gpio5 9 0>;
+	pinctrl-names           = "default";
+	pinctrl-0               = <&pinctrl_ecspi2>;
+	status                  = "okay";
 
 
 	rtc: pcf2123@1 {
-		compatible = "nxp,pcf2123";
+		compatible        = "nxp,pcf2123";
+		reg               = <1>;
 		spi-max-frequency = <10000000>;
 		spi-cs-high;
-		reg = <1>; 
-       };
+    };
 
 };
 
 
 &ecspi3 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio4 24  0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi3>;
-	status = "okay";
+	cs-gpios                = <&gpio4 24  0>;
+	pinctrl-names           = "default";
+	pinctrl-0               = <&pinctrl_ecspi3>;
+	status                  = "okay";
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
@@ -657,21 +696,21 @@
 
 &i2c1 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c1>;
-	status = "okay";
+	pinctrl-names   = "default";
+	pinctrl-0       = <&pinctrl_i2c1>;
+	status          = "okay";
 
 	econtroller: ectrl@40 {
-		compatible = "seco,ectrl";
-		reg = <0x40>;
-		
-		interrupt-parent = <&gpio2>;
-		interrupts = <7 2>;
+		compatible       = "seco,ectrl";
+		reg              = <0x40>;
 
-		events = <ECTRL_EVNT_PWR_BTN  ECTRL_EVNT_RST_BTN  
-				ECTRL_EVNT_SLEEP  ECTRL_EVNT_BATTERY  
-				ECTRL_EVNT_WAKE
-			>;
+		interrupt-parent = <&gpio2>;
+		interrupts       = <7 2>;
+
+		events           = <ECTRL_EVNT_PWR_BTN  ECTRL_EVNT_RST_BTN
+							ECTRL_EVNT_SLEEP  ECTRL_EVNT_BATTERY
+							ECTRL_EVNT_WAKE
+						>;
 
 		boot_device {
 
@@ -679,12 +718,12 @@
 				id    = <ECTRL_BOOTDEV_USDHC1>;
 				label = "external SD";
 			};
-			
+
 			bootdev@1 {
-				id = <ECTRL_BOOTDEV_EMMC>;
+				id    = <ECTRL_BOOTDEV_EMMC>;
 				label = "on board eMMC";
 			};
-		
+
 			bootdev@2 {
 				id    = <ECTRL_BOOTDEV_SPI>;
 				label = "on board SPI flash";
@@ -698,30 +737,31 @@
 
 &i2c2 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c2>;
-	status = "okay";
-	
+	pinctrl-names   = "default";
+	pinctrl-0       = <&pinctrl_i2c2>;
+	status          = "okay";
+
 	hdmi: edid@50 {
 		compatible = "fsl,imx6-hdmi-i2c";
-		reg = <0x50>;
+		reg        = <0x50>;
 	};
+
 };
 
 
 &i2c3 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c3>;
-	status = "okay";
+	pinctrl-names   = "default";
+	pinctrl-0       = <&pinctrl_i2c3>;
+	status          = "okay";
 
 	codec_sgtl5000: sgtl5000@0a {
-		compatible = "fsl,sgtl5000";
-		reg = <0x0a>;
-		clocks = <&clks IMX6QDL_CLK_CKO>;
-		VDDA-supply = <&reg_2p5v_sgtl5000>;
+		compatible   = "fsl,sgtl5000";
+		reg          = <0x0a>;
+		clocks       = <&clks IMX6QDL_CLK_CKO>;
+		VDDA-supply  = <&reg_2p5v_sgtl5000>;
 		VDDIO-supply = <&reg_3p3v_sgtl5000>;
-		status = "disabled";
+		status       = "disabled";
 	};
 
 };
@@ -737,16 +777,16 @@
  */
 &usbh1 {
 	vbus-supply = <&reg_usb_h1_vbus>;
-	status = "okay";
+	status      = "okay";
 };
 
 
 &usbotg {
-	vbus-supply = <&reg_usb_otg_vbus>;
+	vbus-supply   = <&reg_usb_otg_vbus>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usbotg>;
+	pinctrl-0     = <&pinctrl_usbotg>;
 	disable-over-current;
-	status = "okay";
+	status        = "okay";
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
@@ -759,13 +799,13 @@
  * |__________________________________________________________________________|
  */
 &fec {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_enet>;
-	phy-mode = "rgmii";
-	phy-reset-gpios = <&gpio3 23 0>;
+	pinctrl-names      = "default";
+	pinctrl-0          = <&pinctrl_enet>;
+	phy-mode           = "rgmii";
+	phy-reset-gpios    = <&gpio3 23 0>;
 	phy-reset-duration = <10>;
 	fsl,magic-packet;
-	status = "okay";
+	status             = "okay";
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
@@ -783,166 +823,27 @@
 
 
 &hdmi_core {
-	ipu_id = <0>;
+	ipu_id  = <0>;
 	disp_id = <0>;
-	status = "okay";
+	status  = "okay";
 };
 
 
 &hdmi_video {
-	fsl,phy_reg_vlev = <0x0294>;
+	fsl,phy_reg_vlev    = <0x0294>;
 	fsl,phy_reg_cksymtx = <0x800d>;
-	status = "okay";
-};
-
-
-&ldb {
-	status = "okay";
-
-	lvds-channel@0 {
-		reg = <0>;
-		fsl,data-mapping = "spwg";
-		fsl,data-width = <18>;
-		status = "okay";
-		primary;
-
-		display-timings {
-			native-mode = <&timing0>;
-
-			timing0: LDB-WVGA {
-				clock-frequency = <38000000>;
-				hactive = <800>;
-				vactive = <480>;
-				hback-porch = <56>;
-				hfront-porch = <50>;
-				vback-porch = <20>;
-				vfront-porch = <53>;
-				hsync-len = <180>;
-				vsync-len = <30>;
-			};
-
-			timing1: LDB-SVGA {
-				clock-frequency = <40000000>;
-				hactive = <800>;
-				vactive = <600>;
-				hback-porch = <40>;
-				hfront-porch = <60>;
-				vback-porch = <10>;
-				vfront-porch = <10>;
-				hsync-len = <20>;
-				vsync-len = <10>;
-			};
-
-			timing2: LDB-WXGA {
-				clock-frequency = <72000000>;
-				hactive = <1368>;
-				vactive = <768>;
-				hback-porch = <93>;
-				hfront-porch = <33>;
-				vback-porch = <22>;
-				vfront-porch = <7>;
-				hsync-len = <40>;
-				vsync-len = <4>;
-			};
-
-			timing3: LDB-XGA {
-				clock-frequency = <65000000>;
-				hactive = <1024>;
-				vactive = <768>;
-				hback-porch = <1230>;
-				hfront-porch = <40>;
-				vback-porch = <21>;
-				vfront-porch = <7>;
-				hsync-len = <60>;
-				vsync-len = <10>;
-			};
-
-			timing4: LDB-SXGA {
-				clock-frequency = <54000000>;
-				hactive = <1280>;
-				vactive = <1024>;
-				hback-porch = <220>;
-				hfront-porch = <40>;
-				vback-porch = <21>;
-				vfront-porch = <7>;
-				hsync-len = <60>;
-				vsync-len = <10>;
-			};
-
-
-			timing5: LDB-1050P60 {
-				clock-frequency = <0x68e7780>;
-				hactive = <0x690>;
-				vactive = <0x41a>;
-				hback-porch = <0x28>;
-				hfront-porch = <0x50>;
-				vback-porch = <0xf>;
-				vfront-porch = <0xf>;
-				hsync-len = <0x28>;
-				vsync-len = <0x5>;
-			};
-
-			timing6: LDB-1080P60 {
-				clock-frequency = <0x7bfa480>;
-				hactive = <0x780>;
-				vactive = <0x438>;
-				hback-porch = <0x64>;
-				hfront-porch = <0x28>;
-				vback-porch = <0x1e>;
-				vfront-porch = <0x2>;
-				hsync-len = <0xa>;
-				vsync-len = <0x2>;
-			};
-
-			timing7: LDB-VGA-NL {
-				clock-frequency = <25000000>;
-				hactive = <640>;
-				vactive = <480>;
-				hback-porch = <70>;
-				hfront-porch = <70>;
-				vback-porch = <20>;
-				vfront-porch = <20>;
-				hsync-len = <10>;
-				vsync-len = <5>;
-			};
-
-		};
-	};
-
-	lvds-channel@1 {
-		reg = <1>;
-		fsl,data-mapping = "spwg";
-		fsl,data-width = <18>;
-		status = "disabled";
-
-		crtc = "ipu2-di1";
-		display-timings {
-			native-mode = <&timing7>;
-
-			timing8: seco_lvds1 {
-				clock-frequency = <38000000>;
-				hactive = <800>;
-				vactive = <480>;
-				hback-porch = <56>;
-				hfront-porch = <50>;
-				vback-porch = <20>;
-				vfront-porch = <23>;
-				hsync-len = <150>;
-				vsync-len = <60>;
-			};
-		};
-	};
-
+	status              = "okay";
 };
 /*  __________________________________________________________________________
- * |                                                                          |
- * |                                    PCIE                                  |
+ * |									      |
+ * | 					PCIE				      |
  * |__________________________________________________________________________|
  */
 
 &pcie {
         status = "okay";
 };
+
 
 /*  __________________________________________________________________________
  * |                                                                          |
@@ -957,32 +858,32 @@
 		default_mode = <&audio_codec1>;
 
 		audio_codec0: sgtl5000 {
-			code_name = "sgtl5000";
-			phandle-num-enable = <6>;
+			code_name           = "sgtl5000";
+			phandle-num-enable  = <6>;
 			phandle-list-enable = <&sound_sgtl5000>,
-								<&codec_sgtl5000>,
-								<&reg_2p5v_sgtl5000>,
-								<&reg_3p3v_sgtl5000>,
-								<&ssi1>,
-								<&audmux>;
+									<&codec_sgtl5000>,
+									<&reg_2p5v_sgtl5000>,
+									<&reg_3p3v_sgtl5000>,
+									<&ssi1>,
+									<&audmux>;
 
-			phandle-num-set = <2>;
-			phandle-list-set = <&ssi1>,
-								<&audmux>;
+			phandle-num-set     = <2>;
+			phandle-list-set    = <&ssi1>,
+									<&audmux>;
 			phandle-list-source = <&ssi_sgtl5000>,
-								<&audmux_sgtl5000>;
+									<&audmux_sgtl5000>;
 		};
 
 		audio_codec1: vt1613 {
-			code_name = "vt1613";
-			phandle-num-enable = <4>;
+			code_name           = "vt1613";
+			phandle-num-enable  = <4>;
 			phandle-list-enable = <&sound_vt1613>,
-								<&codec_vt1613>,
-								<&ssi1>,
-								<&audmux>;
+									<&codec_vt1613>,
+									<&ssi1>,
+									<&audmux>;
 
-			phandle-num-set = <1>;
-			phandle-list-set = <&ssi1>;
+			phandle-num-set     = <1>;
+			phandle-list-set    = <&ssi1>;
 			phandle-list-source = <&ssi_vt1613>;
 		};
 
@@ -992,19 +893,19 @@
 		default_mode = <&serial_device1>;
 
 		serial_device0: flexcan {
-			code_name = "flexcan";
-		phandle-num-enable = <1>;
+			code_name           = "flexcan";
+			phandle-num-enable  = <1>;
 			phandle-list-enable = <&flexcan1>;
 
-			phandle-num-set = <0>;
+			phandle-num-set     = <0>;
 		};
 
 		serial_device1: uart {
-			code_name = "uart";
-			phandle-num-enable = <1>;
+			code_name           = "uart";
+			phandle-num-enable  = <1>;
 			phandle-list-enable = <&uart4>;
 
-			phandle-num-set = <0>;
+			phandle-num-set     = <0>;
 		};
 
 	};

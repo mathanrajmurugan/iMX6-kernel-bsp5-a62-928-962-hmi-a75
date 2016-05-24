@@ -14,6 +14,7 @@
 
 #include "imx6q.dtsi"
 #include "imx6qdl-seco_quadmo747_928.dtsi"
+#include "imx6qdl-seco_lvds_display.dtsi"
 
 / {
 	model = "SECO i.MX6 Quad Quadmo747 (928) Board";
