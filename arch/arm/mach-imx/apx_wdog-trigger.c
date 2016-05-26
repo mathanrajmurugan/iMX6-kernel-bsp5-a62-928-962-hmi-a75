@@ -40,7 +40,7 @@
 
 #define WDT_PAD_CTRL_GPIO(x)    writel_relaxed(0x06028, (x))
 
-#define WDT_DIR_OUT_GPIO(x,n)   writel_relaxed(readl_relaxed((x) + 0x4) | ( 1 << (n)), (x))
+#define WDT_DIR_OUT_GPIO(x,n)   writel_relaxed(readl_relaxed((x) + 0x4) | ( 1 << (n)), (x) + 0x4)
 
 #define WDT_SET_H_GPIO(x,n)     writel_relaxed(readl_relaxed((x)) | (1 << (n)) , (x))
 
