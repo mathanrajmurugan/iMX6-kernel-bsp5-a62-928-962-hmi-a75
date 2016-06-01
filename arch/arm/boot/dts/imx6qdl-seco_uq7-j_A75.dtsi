@@ -742,6 +742,8 @@
 		compatible       = "goodix,gt928";
 		reg              = <0x5d>;
 
+		touchscreen-swapped-x-y;
+
 		pinctrl-names    = "default";
 		pinctrl-0        = <&pinctrl_gt928>;
 		interrupt-parent = <&gpio4>;

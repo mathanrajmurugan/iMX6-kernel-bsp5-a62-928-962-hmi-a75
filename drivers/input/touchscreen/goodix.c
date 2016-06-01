@@ -646,7 +646,7 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
 static int goodix_configure_dev(struct goodix_ts_data *ts)
 {
         int error;
-	struct i2c_client *client = &ts->client;
+	struct i2c_client *client = ts->client;
 
         ts->swapped_x_y = of_property_read_bool(client->dev.of_node,
                                                     "touchscreen-swapped-x-y");
