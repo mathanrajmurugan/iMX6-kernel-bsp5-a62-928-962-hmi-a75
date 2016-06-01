@@ -466,6 +466,17 @@
 
 
 /*  __________________________________________________________________________
+ * |________________________________ TOUCH ___________________________________|
+ */
+		pinctrl_gt928: gt928grp {
+			fsl,pins = <
+				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30           0x80000000
+				MX6QDL_PAD_SD2_CMD__GPIO1_IO11              0x80000000
+			>;
+		};
+
+
+/*  __________________________________________________________________________
  * |__________________________________ PWM ___________________________________|
  */
 		/*  Backlight  */
@@ -726,6 +737,19 @@
 		VDDIO-supply = <&reg_3p3v_sgtl5000>;
 		status       = "disabled";
 	};
+
+	gt928@5d {
+		compatible       = "goodix,gt928";
+		reg              = <0x5d>;
+
+		pinctrl-names    = "default";
+		pinctrl-0        = <&pinctrl_gt928>;
+		interrupt-parent = <&gpio4>;
+		interrupts       = <30 IRQ_TYPE_LEVEL_LOW>;
+		irq-gpio         = <&gpio4 30 GPIO_ACTIVE_LOW>;
+		reset-gpio       = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	};
+
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
@@ -822,7 +846,7 @@
 &dynamic_choice {
 
 	chip_audio {
-		default_mode = <&audio_codec1>;
+		default_mode = <&audio_codec2>;
 
 		audio_codec0: sgtl5000 {
 			code_name            = "sgtl5000";
@@ -852,6 +876,9 @@
 			phandle-num-set     = <1>;
 			phandle-list-set    = <&ssi1>;
 			phandle-list-source = <&ssi_vt1613>;
+		};
+
+		audio_codec2: no_audio {
 		};
 
 	};

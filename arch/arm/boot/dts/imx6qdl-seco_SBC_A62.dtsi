@@ -633,6 +633,18 @@
 		gpios            = <&gpio1 15 GPIO_ACTIVE_LOW>;
 	};
 
+	gt928@5d {
+		compatible       = "goodix,gt928";
+		reg              = <0x5d>;
+
+		pinctrl-names    = "default";
+		pinctrl-0        = <&pinctrl_st1232>;
+		interrupt-parent = <&gpio1>;
+		interrupts       = <13 IRQ_TYPE_LEVEL_LOW>;
+		irq-gpio         = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		reset-gpio       = <&gpio1 15 GPIO_ACTIVE_LOW>;
+	};
+
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
