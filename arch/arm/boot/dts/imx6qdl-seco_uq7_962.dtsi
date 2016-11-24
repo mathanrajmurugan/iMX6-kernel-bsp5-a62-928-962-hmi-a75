@@ -665,23 +665,38 @@
 	pinctrl-0               = <&pinctrl_ecspi2>;
 	status                  = "okay";
 
+	spidev20: spidev@0 {
+		compatible        = "spidev";
+		#address-cells    = <1>;
+		#size-cells       = <0>;
+		reg               = <0>;
+		spi-max-frequency = <20000000>;
+	};
 
-	rtc: pcf2123@1 {
-		compatible        = "nxp,pcf2123";
+	spidev21: spidev@1 {
+		compatible        = "spidev";
+		#address-cells    = <1>;
+		#size-cells       = <0>;
 		reg               = <1>;
-		spi-max-frequency = <10000000>;
-		spi-cs-high;
-    };
-
+		spi-max-frequency = <20000000>;
+	};
 };
 
 
 &ecspi3 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios                = <&gpio4 24  0>;
+	cs-gpios                = <&gpio4 24 0>;
 	pinctrl-names           = "default";
 	pinctrl-0               = <&pinctrl_ecspi3>;
 	status                  = "okay";
+
+	rtc: pcf2123@0 {
+		compatible        = "nxp,pcf2123";
+		reg               = <0>;
+		spi-max-frequency = <10000000>;
+		spi-cs-high;
+    };
+
 };
 /*  __________________________________________________________________________
  * |__________________________________________________________________________|
