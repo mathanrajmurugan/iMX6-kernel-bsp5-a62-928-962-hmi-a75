@@ -746,8 +746,15 @@
 		pinctrl-0        = <&pinctrl_gt928>;
 		interrupt-parent = <&gpio4>;
 		interrupts       = <30 IRQ_TYPE_LEVEL_LOW>;
-		irq-gpio         = <&gpio4 30 GPIO_ACTIVE_LOW>;
-		reset-gpio       = <&gpio1 11 GPIO_ACTIVE_LOW>;
+
+		gpios            = <&gpio1 11 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-gpio   = <30>;
+		reset-gpio       = <11>;
+		ts-max-width     = <1280>;
+		ts-max-height    = <800>;
+
+		ts-max-finger    = <1>;
+		sensor-id        = <0>;
 	};
 
 };
